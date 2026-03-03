@@ -12,6 +12,7 @@ gem "sqlite3"
 gem "redis", "~> 5.4"
 
 # Deployment
+gem "kamal", require: false
 gem "puma", "~> 6.6"
 
 # Jobs

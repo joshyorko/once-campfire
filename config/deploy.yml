@@ -1,0 +1,71 @@
+# Name of this app
+service: once-campfire
+image: once-campfire
+
+
+#-- About your deployment --#
+
+# Where to deploy once-campfire
+servers:
+  web:
+    - 10.10.10.106
+
+# How you connect to your server
+ssh:
+  user: kdlocpanda
+
+# Cloudflare Tunnel handles public TLS; Kamal proxy serves local origin HTTP
+proxy:
+  host: campfire.yorko.io
+  app_port: 80
+  ssl_redirect: true
+  forward_headers: true
+  ssl: false
+  run:
+    bind_ips:
+      - 127.0.0.1
+
+# Your application configuration (secrets come from .kamal/secrets).
+env:
+  secret:
+    - SECRET_KEY_BASE
+    - VAPID_PUBLIC_KEY
+    - VAPID_PRIVATE_KEY
+
+
+accessories:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    host: 10.10.10.106
+    cmd: tunnel --no-autoupdate run
+    env:
+      secret:
+        - TUNNEL_TOKEN:CLOUDFLARED_TOKEN
+
+
+#-- General configuration --#
+
+# Use a local registry to deploy
+registry:
+  server: localhost:5555
+
+# Handy aliases for interacting with your deployment. For eaxmple: `bin/kamal console` will connect to a
+# Rails console in production.
+aliases:
+  console: app exec --interactive --reuse "bin/rails console"
+  shell: app exec --interactive --reuse "bash"
+  logs: app logs -f
+  dbc: app exec --interactive --reuse "bin/rails dbconsole"
+
+# Use a persistent host path for sqlite database files and local Active Storage files.
+volumes:
+  - "/home/kdlocpanda/once-campfire-data/storage:/rails/storage"
+
+# Bridge fingerprinted assets, like JS and CSS, between versions to avoid
+# hitting 404 on in-flight requests. Combines all files from new and old
+# version inside the asset_path.
+asset_path: /rails/public/assets
+
+# Configure the image builder.
+builder:
+  arch: amd64
