@@ -13,10 +13,13 @@ if [ -n "${S3_BUCKET:-}" ] && [ -n "${S3_ENDPOINT:-}" ]; then
 
   mkdir -p /rails/storage/db
 
-  echo "[entrypoint] Restoring SQLite database from Litestream ..."
-  rm -f "${DB_PATH}" "${DB_PATH}-shm" "${DB_PATH}-wal"
-  litestream restore -if-replica-exists -config /rails/config/litestream.yml "${DB_PATH}" \
-    2>&1 || echo "[entrypoint] No replica found (first deploy is OK)"
+  if [ -f "${DB_PATH}" ]; then
+    echo "[entrypoint] Existing SQLite database found at ${DB_PATH}; skipping restore"
+  else
+    echo "[entrypoint] Restoring SQLite database from Litestream ..."
+    litestream restore -if-replica-exists -config /rails/config/litestream.yml "${DB_PATH}" \
+      2>&1 || echo "[entrypoint] No replica found (first deploy is OK)"
+  fi
 fi
 
 if [ "${LITESTREAM_ENABLED}" = true ]; then
