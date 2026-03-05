@@ -1,0 +1,10 @@
+dbs:
+  - path: /rails/storage/db/production.sqlite3
+    replicas:
+      - type: s3
+        bucket: ${S3_BUCKET}
+        path: litestream/production.sqlite3
+        region: ${AWS_REGION}
+        endpoint: ${S3_ENDPOINT}
+        force-path-style: true
+        sync-interval: 1s

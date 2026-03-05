@@ -1,0 +1,56 @@
+#!/bin/bash -e
+
+LITESTREAM_PID=""
+APP_PID=""
+LITESTREAM_ENABLED=false
+DB_PATH="/rails/storage/db/production.sqlite3"
+
+if [ -n "${S3_BUCKET:-}" ] && [ -n "${S3_ENDPOINT:-}" ]; then
+  LITESTREAM_ENABLED=true
+
+  echo "[entrypoint] Ensuring S3 bucket exists ..."
+  ./bin/ensure-s3-bucket
+
+  mkdir -p /rails/storage/db
+
+  echo "[entrypoint] Restoring SQLite database from Litestream ..."
+  rm -f "${DB_PATH}" "${DB_PATH}-shm" "${DB_PATH}-wal"
+  litestream restore -if-replica-exists -config /rails/config/litestream.yml "${DB_PATH}" \
+    2>&1 || echo "[entrypoint] No replica found (first deploy is OK)"
+fi
+
+if [ "${LITESTREAM_ENABLED}" = true ]; then
+  litestream replicate -config /rails/config/litestream.yml &
+  LITESTREAM_PID=$!
+  echo "[entrypoint] Litestream replicate started (pid=${LITESTREAM_PID})"
+fi
+
+shutdown() {
+  echo "[entrypoint] Shutdown signal received"
+
+  if [ -n "${APP_PID}" ]; then
+    kill -TERM "${APP_PID}" 2>/dev/null || true
+    wait "${APP_PID}" 2>/dev/null || true
+  fi
+
+  if [ -n "${LITESTREAM_PID}" ]; then
+    kill -TERM "${LITESTREAM_PID}" 2>/dev/null || true
+    wait "${LITESTREAM_PID}" 2>/dev/null || true
+  fi
+
+  exit 0
+}
+
+trap shutdown SIGTERM SIGINT
+
+"${@}" &
+APP_PID=$!
+wait "${APP_PID}"
+EXIT_CODE=$?
+
+if [ -n "${LITESTREAM_PID}" ]; then
+  kill -TERM "${LITESTREAM_PID}" 2>/dev/null || true
+  wait "${LITESTREAM_PID}" 2>/dev/null || true
+fi
+
+exit "${EXIT_CODE}"
