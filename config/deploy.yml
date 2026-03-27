@@ -2,12 +2,10 @@
 require "dotenv"
 Dotenv.load(".env.kamal.local") if File.exist?(".env.kamal.local")
 s3_endpoint = ENV.fetch("S3_ENDPOINT")
-s3_region = ENV.fetch("S3_REGION", "auto")
-s3_force_path_style = ENV.fetch("S3_FORCE_PATH_STYLE", "false")
+s3_region = ENV.fetch("S3_REGION", "us-east-1")
+s3_force_path_style = ENV.fetch("S3_FORCE_PATH_STYLE", "true")
 s3_bucket = ENV.fetch("S3_BUCKET", "once-campfire-production")
 s3_bucket_setup_enabled = ENV.fetch("S3_BUCKET_SETUP_ENABLED", "false")
-s3_request_checksum_calculation = ENV.fetch("S3_REQUEST_CHECKSUM_CALCULATION", "when_required")
-s3_response_checksum_validation = ENV.fetch("S3_RESPONSE_CHECKSUM_VALIDATION", "when_required")
 %>
 
 # Name of this app
@@ -54,8 +52,6 @@ env:
     S3_FORCE_PATH_STYLE: <%= s3_force_path_style %>
     S3_BUCKET_SETUP_ENABLED: <%= s3_bucket_setup_enabled %>
     S3_BUCKET: <%= s3_bucket %>
-    S3_REQUEST_CHECKSUM_CALCULATION: <%= s3_request_checksum_calculation %>
-    S3_RESPONSE_CHECKSUM_VALIDATION: <%= s3_response_checksum_validation %>
     AWS_REGION: <%= s3_region %>
 
 
