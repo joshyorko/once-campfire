@@ -38,7 +38,7 @@ Rails.application.configure do
 
   # Store uploaded files in env-selected service; defaults to local.
   config.active_storage.service = ENV.fetch("ACTIVE_STORAGE_SERVICE", "local").to_sym
-  config.active_storage.resolve_model_to_route = :rails_storage_redirect
+  config.active_storage.resolve_model_to_route = :rails_storage_proxy
 
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
   # config.assume_ssl = true

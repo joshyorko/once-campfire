@@ -31,7 +31,7 @@ class Messages::AttachmentPresentation
       inline_media_dimension_constraints(width, height) do
         tag.video \
           src: rails_blob_path(message.attachment), poster: url_for(message.attachment.preview(format: :webp, resize_to_limit: [ Message::THUMBNAIL_MAX_WIDTH, Message::THUMBNAIL_MAX_HEIGHT ])),
-          controls: true, preload: :metadata, width: "100%", height: "100%", class: "message__attachment"
+          controls: true, preload: :none, width: "100%", height: "100%", class: "message__attachment"
       end
     end
 
