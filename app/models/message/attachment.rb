@@ -11,8 +11,13 @@ module Message::Attachment
   end
 
   module ClassMethods
-    def create_with_attachment!(attributes)
-      create!(attributes).tap(&:process_attachment)
+    def create_with_attachment!(attributes = nil, attachment_signed_id: nil, **kwargs)
+      attributes = (attributes || {}).to_h.symbolize_keys.merge(kwargs)
+
+      create!(attributes).tap do |message|
+        message.attachment.attach(attachment_signed_id) if attachment_signed_id.present?
+        message.process_attachment if message.attachment.attached?
+      end
     end
   end
 

@@ -19,6 +19,17 @@ class Message::AttachmentTest < ActiveSupport::TestCase
     assert_equal message.plain_text_body, "moon.jpg"
   end
 
+  test "creating a message with a direct-uploaded attachment attaches the blob" do
+    blob = create_blob("upload.txt", "text/plain", StringIO.new("direct upload"))
+    message = rooms(:hq).messages.create_with_attachment!(
+      { creator: users(:david), client_message_id: "message" },
+      attachment_signed_id: blob.signed_id
+    )
+
+    assert_equal blob, message.attachment.blob
+    assert_equal "upload.txt", message.plain_text_body
+  end
+
 
   private
     def create_attachment_message(file, content_type)
@@ -26,5 +37,13 @@ class Message::AttachmentTest < ActiveSupport::TestCase
         creator: users(:david),
         client_message_id: "message",
         attachment: fixture_file_upload(file, content_type)
+    end
+
+    def create_blob(file, content_type, io = file_fixture(file).open)
+      ActiveStorage::Blob.create_and_upload!(
+        io: io,
+        filename: file,
+        content_type: content_type
+      )
     end
 end

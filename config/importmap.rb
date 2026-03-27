@@ -7,6 +7,7 @@ pin "@rails/actioncable", to: "actioncable.esm.js"
 pin "@rails/request.js", to: "@rails--request.js" # @0.0.8
 pin "trix", to: "trix.esm.min.js" # @2.0.10
 pin "@rails/actiontext", to: "actiontext.js"
+pin "@rails/activestorage", to: "activestorage.esm.js"
 pin "highlight.js", to: "highlight.js/core.js"
 
 pin_all_from "app/javascript/initializers", under: "initializers"

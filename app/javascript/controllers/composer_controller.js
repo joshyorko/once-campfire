@@ -6,7 +6,7 @@ import { escapeHTML } from "helpers/dom_helpers"
 export default class extends Controller {
   static classes = ["toolbar"]
   static targets = [ "clientid", "fields", "fileList", "text" ]
-  static values = { roomId: Number }
+  static values = { directUploadUrl: String, roomId: Number }
   static outlets = [ "messages" ]
 
   #files = []
@@ -137,14 +137,17 @@ export default class extends Controller {
 
     for (const file of files) {
       const clientMessageId = this.#generateClientId()
-      const uploader = new FileUploader(file, this.element.action, clientMessageId, this.#uploadProgress.bind(this))
+      const uploader = new FileUploader(file, this.element.action, this.directUploadUrlValue, clientMessageId, this.#uploadProgress.bind(this))
 
       const body = this.#pendingUploadProgress(file.name)
       await this.messagesOutlet.insertPendingMessage(clientMessageId, body)
 
-      const resp = await uploader.upload()
-
-      Turbo.renderStreamMessage(resp)
+      try {
+        const resp = await uploader.upload()
+        Turbo.renderStreamMessage(resp)
+      } catch {
+        this.messagesOutlet.failPendingMessage(clientMessageId)
+      }
     }
   }
 

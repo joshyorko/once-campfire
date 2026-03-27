@@ -1,6 +1,8 @@
 require "test_helper"
 
 class MessagesControllerTest < ActionDispatch::IntegrationTest
+  include ActionDispatch::TestProcess
+
   setup do
     host! "once.campfire.test"
 
@@ -61,6 +63,23 @@ class MessagesControllerTest < ActionDispatch::IntegrationTest
     assert_broadcasts "unread_rooms", 1 do
       post room_messages_url(@room, format: :turbo_stream), params: { message: { body: "New one", client_message_id: 999 } }
     end
+  end
+
+  test "creating a message from a direct-uploaded attachment attaches the blob" do
+    blob = ActiveStorage::Blob.create_and_upload!(
+      io: StringIO.new("direct upload"),
+      filename: "upload.txt",
+      content_type: "text/plain"
+    )
+
+    assert_difference -> { Message.count }, 1 do
+      post room_messages_url(@room, format: :turbo_stream), params: { message: {
+        attachment_signed_id: blob.signed_id, client_message_id: 999
+      } }
+    end
+
+    assert_response :success
+    assert_equal blob, Message.last.attachment.blob
   end
 
   test "update updates a message belonging to the user" do

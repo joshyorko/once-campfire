@@ -19,7 +19,7 @@ class MessagesController < ApplicationController
 
   def create
     set_room
-    @message = @room.messages.create_with_attachment!(message_params)
+    @message = @room.messages.create_with_attachment!(message_params.except(:attachment_signed_id), attachment_signed_id: message_params[:attachment_signed_id])
 
     @message.broadcast_create
     deliver_webhooks_to_bots
@@ -68,7 +68,7 @@ class MessagesController < ApplicationController
 
 
     def message_params
-      params.require(:message).permit(:body, :attachment, :client_message_id)
+      params.require(:message).permit(:body, :attachment, :attachment_signed_id, :client_message_id)
     end
 
 
