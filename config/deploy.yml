@@ -1,3 +1,13 @@
+<%
+require "dotenv"
+Dotenv.load(".env.kamal.local") if File.exist?(".env.kamal.local")
+s3_endpoint = ENV.fetch("S3_ENDPOINT")
+s3_region = ENV.fetch("S3_REGION", "auto")
+s3_force_path_style = ENV.fetch("S3_FORCE_PATH_STYLE", "false")
+s3_bucket = ENV.fetch("S3_BUCKET", "once-campfire-production")
+s3_bucket_setup_enabled = ENV.fetch("S3_BUCKET_SETUP_ENABLED", "false")
+%>
+
 # Name of this app
 service: once-campfire
 image: once-campfire
@@ -37,11 +47,12 @@ env:
     - AWS_SECRET_ACCESS_KEY:S3_SECRET_ACCESS_KEY
   clear:
     ACTIVE_STORAGE_SERVICE: s3
-    S3_ENDPOINT: http://10.10.40.56:9000
-    S3_REGION: us-east-1
-    S3_FORCE_PATH_STYLE: true
-    S3_BUCKET: once-campfire-production
-    AWS_REGION: us-east-1
+    S3_ENDPOINT: <%= s3_endpoint %>
+    S3_REGION: <%= s3_region %>
+    S3_FORCE_PATH_STYLE: <%= s3_force_path_style %>
+    S3_BUCKET_SETUP_ENABLED: <%= s3_bucket_setup_enabled %>
+    S3_BUCKET: <%= s3_bucket %>
+    AWS_REGION: <%= s3_region %>
 
 
 accessories:

@@ -6,5 +6,5 @@ dbs:
         path: litestream/production.sqlite3
         region: ${AWS_REGION}
         endpoint: ${S3_ENDPOINT}
-        force-path-style: true
+        force-path-style: ${S3_FORCE_PATH_STYLE}
         sync-interval: 1s

@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ENV_FILE="${ENV_FILE:-${ROOT_DIR}/.env.kamal.local}"
+MINIO_ENDPOINT="${MINIO_ENDPOINT:-http://10.10.40.56:9000}"
+SOURCE_BUCKET="${SOURCE_BUCKET:-}"
+DEST_BUCKET="${DEST_BUCKET:-}"
+MC_IMAGE="${MC_IMAGE:-minio/mc:latest}"
+
+load_env_file() {
+  local file="$1"
+
+  if [[ ! -f "${file}" ]]; then
+    echo "Missing env file: ${file}" >&2
+    exit 1
+  fi
+
+  set -a
+  # shellcheck disable=SC1090
+  source "${file}"
+  set +a
+}
+
+load_env_file "${ENV_FILE}"
+
+SOURCE_BUCKET="${SOURCE_BUCKET:-${MINIO_SOURCE_BUCKET:-once-campfire-production}}"
+DEST_BUCKET="${DEST_BUCKET:-${S3_BUCKET:-once-campfire-production}}"
+
+required_vars=(
+  S3_ACCESS_KEY_ID
+  S3_SECRET_ACCESS_KEY
+  S3_ENDPOINT
+  DEST_BUCKET
+  SOURCE_BUCKET
+)
+
+for var_name in "${required_vars[@]}"; do
+  if [[ -z "${!var_name:-}" ]]; then
+    echo "Missing required variable: ${var_name}" >&2
+    exit 1
+  fi
+done
+
+source_access_key="${MINIO_ACCESS_KEY_ID:-${MINIO_ROOT_USER:-${S3_ACCESS_KEY_ID}}}"
+source_secret_key="${MINIO_SECRET_ACCESS_KEY:-${MINIO_ROOT_PASSWORD:-${S3_SECRET_ACCESS_KEY}}}"
+
+if [[ -z "${source_access_key}" || -z "${source_secret_key}" ]]; then
+  echo "Missing MinIO credentials. Set MINIO_ACCESS_KEY_ID/MINIO_SECRET_ACCESS_KEY or MINIO_ROOT_USER/MINIO_ROOT_PASSWORD." >&2
+  exit 1
+fi
+
+source_host="${MINIO_ENDPOINT#http://}"
+source_host="${source_host#https://}"
+dest_host="${S3_ENDPOINT#http://}"
+dest_host="${dest_host#https://}"
+
+echo "Backfilling ${SOURCE_BUCKET} from MinIO into ${DEST_BUCKET} on R2"
+echo "Source endpoint: ${MINIO_ENDPOINT}"
+echo "Destination endpoint: ${S3_ENDPOINT}"
+
+exec docker run --rm \
+  -e MC_HOST_source="http://${source_access_key}:${source_secret_key}@${source_host}" \
+  -e MC_HOST_dest="https://${S3_ACCESS_KEY_ID}:${S3_SECRET_ACCESS_KEY}@${dest_host}" \
+  "${MC_IMAGE}" \
+  mirror --overwrite --retry "source/${SOURCE_BUCKET}" "dest/${DEST_BUCKET}"
